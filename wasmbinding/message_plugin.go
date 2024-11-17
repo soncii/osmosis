@@ -2,6 +2,8 @@ package wasmbinding
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	errorsmod "cosmossdk.io/errors"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
@@ -108,6 +110,9 @@ func PerformMint(f *tokenfactorykeeper.Keeper, b *bankkeeper.BaseKeeper, ctx sdk
 	if mint == nil {
 		return wasmvmtypes.InvalidRequest{Err: "mint token null mint"}
 	}
+	if !isFullDenom(mint.Denom) {
+		mint.Denom = fmt.Sprintf("factory/%s/%s", contractAddr.String(), mint.Denom)
+	}
 	rcpt, err := parseAddress(mint.MintToAddress)
 	if err != nil {
 		return err
@@ -130,6 +135,10 @@ func PerformMint(f *tokenfactorykeeper.Keeper, b *bankkeeper.BaseKeeper, ctx sdk
 		return errorsmod.Wrap(err, "sending newly minted coins from message")
 	}
 	return nil
+}
+
+func isFullDenom(denom string) bool {
+	return strings.HasPrefix(denom, "factory/")
 }
 
 // changeAdmin changes the admin.
